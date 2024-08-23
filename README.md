@@ -2,6 +2,8 @@
 ## Los datos se encuentran en Zenodo.
 https://zenodo.org/records/13366515
 
+## 
+
 ## Shiny del medatada 
 ### Visualización del shiny obtenido a través del código (app.R) con los datos del metadata encontrado en Zenodo.
 https://github.com/EvelynRomero-code/ClaseRNAseq/blob/main/app.R
@@ -78,7 +80,7 @@ https://zenodo.org/records/13367020
 ## Barplot
 ![image](https://github.com/user-attachments/assets/228c6adf-9323-4663-bb26-fffdbb852456)
 
-##Agradecimientos
+## Agradecimientos
 #### Agrdezco a los docentes que me apoyaron para la realización de esta práctica, al igual que Norwegian University of Life Science por la aportación de los datos de las muestras. 
 
 
