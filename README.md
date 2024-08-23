@@ -2,7 +2,13 @@
 ## Los datos se encuentran en Zenodo.
 https://zenodo.org/records/13366515
 
-## 
+<p style="font-size: 14px; font-family: 'Courier New', monospace;"">
+En este Readme se realizo un ánalisis de expresión diferencial de mRNA extraido de la abscisión de la Euphorbia pulcherrima (Poinsettia), igualmente se otuvo de diferentes zonas de la cabeza de la planta (zona de la abscisión, proximal y distal) en diferentes tiempos (día 0, 2, 4 y 6). 
+
+Para el enriquecimiento del mRNA que se obtuvo, se utilizó el TruSeq RNA Sample Prep Kit v2 de Ilumina. Para la purificación de las moléculas del mRNA que contienen una cola poli-A utilizando perlas magnéticas unidas a oligo-dT. Seguidamente se fragmentó el mRNA, para ser copiados en cDNA y producir la cadena complementaria de esta misma. Finalmente, los productos se purifican y enriquecen con PCR para crear la biblioteca de ADNc final. 
+
+Asimismo, se pre-procesaron los datos crudos para aumentar la calidad de los reads y con ello realizar el mapeo. 
+</p>
 
 ## Shiny del medatada 
 ### Visualización del shiny obtenido a través del código (app.R) con los datos del metadata encontrado en Zenodo.
