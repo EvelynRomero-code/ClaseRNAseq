@@ -1,0 +1,305 @@
+---
+title: "Expresión diferencial (RNAseq)"
+author: "Evelyn"
+date: "2024-08-15"
+output: html_document
+---
+
+```{r}
+#instalando paqueterias de bioconductor
+if (!require("BiocManager", quietly = TRUE))
+    install.packages("BiocManager")
+
+BiocManager::install("edgeR")
+
+BiocManager::install("limma")
+
+#Necesitamos cargar edgaer y limma, para eso usamos la función library
+
+library(limma)
+library(edgeR)
+
+```
+
+**Acceder a la tabla de expresión**
+
+```{r}
+setwd("Expresión_diferencial_RNAseq/")
+#Al momento de nombrar la carpeta donde se ha guardado la tabla no poner espacios, /, #, %, etc.
+
+#Podemos saber que archivos están en esta dirección usando el siguiente comando: 
+
+list.files()
+```
+
+**Leer la tabla **
+```{r}
+#Aquí llamaremos a nuestra tabla Saccharomyces.txt junto con sus encabezados
+counts = read.table("Saccharomyces.txt", header=TRUE, row.names = 1, sep="\t", comment.char="")
+
+#Los primeros 6 encabezados se muestran
+head(counts)
+
+
+```
+**Crear carpeta**
+```{r}
+#Para crear un archivo donde se almacenarán los resultados del análisis: 
+
+outpath = "C:/Users/Evelyn Lilian/Documents/Expresión_diferencial_RNAseq/results"
+
+dir.create(outpath, showWarnings = FALSE)
+
+#aquí llamaremos a nuestra tabla de datos y la guardaremos en una variable dentro de R
+counts = read.table("Saccharomyces.txt", header=TRUE, row.names = 1, sep="\t", comment.char="") 
+
+#Podemos saber cómo luce nuestra tabla cargada y que dimenciones tiene este objeto. 
+head(counts)
+
+
+```
+
+NOTA: ste12 es un regulador positivo de la extensión de la esperanza de vida.En el experimento se realizo con una levadura con el gen mutado y otra levadura silvestre con sus respectivos controles. wl(silvestre) y st(mutante).
+
+**Visualizando tabla total (dim)**
+```{r}
+dim(counts)
+```
+
+NOTA: Filtrar los datos por la cantidad mínima de lecturas asociadas a cada gen, a fin de no tener muchos genes con baja expresión y que estos nos causen ruido en el análisis
+
+**Filtrado los genes con baja expresión usando las siguientes instrucciones**
+```{r}
+#Genes que tienen menos de 2 readss y en la suma de todas las filas da menos de 10 lecturas se eliminarán. 
+
+counts = counts[rowSums(cpm(counts)>=2 ) >= 10,]
+
+#rowSum es para la suma total
+# cpm(counts) es para los reads, el comando cpm y nos ayuda a tener los datos de expresión en cuentas por millón. 
+
+#Después de filtrar, la tabla a cambiado y visualizamos el encabezado. 
+
+head(counts)
+
+
+```
+
+**Visualizando tabla total (dim)**
+```{r}
+dim(counts)
+```
+
+**Visualizar los nombres de las columnas**
+```{r}
+colnames(counts)
+```
+**Gráfica de regresión lineal**
+NOTA: Esto se hace para hacer una comparación entre tratamientos para ver si existe una diferencia entre la expresión de los genes entre los tratamientos. AL igual se puede hacer para replicas. La regresión lineal se usa como un modelo. *Se hace una comparación entre dos tratamientos*
+
+```{r}
+#además teniendo los datos precargados, podemos visualizarlos en alguna gráfica como lo hemos visto antes
+
+plot(log2(counts[,c("wt_sc_1", "st_sc_1")]), col="gray") 
+
+#aquí estamos comparando únicamente dos librerías, ustedes puedes probar otras.
+```
+
+
+**Regresión lineal**
+```{r}
+lm(counts[,"wt_sc_1"] ~ counts[,"st_sc_3"] ) #regresión lineal.
+```
+
+**Agrupamiento de tratamiento**
+Agrupamos las 3 replicas en 1 grupo (tratamiento)
+
+```{r}
+#esto es para declarar los grupos que usaremos en el objeto DGEList (objeto de edgeR)
+grp = sub("..$", "", colnames(counts)) 
+
+
+#vean el objeto
+grp
+```
+
+
+**Haciendo un objeto lista**
+```{r}
+#haciendo el objeto DGEList
+dge = DGEList(counts=counts, group=grp)
+
+dge
+```
+
+
+**Gráfica de dispersión entre tratamientos**
+```{r}
+#Podemos visualizar la dispersión de nuestras librerías usando el plot MDS
+
+plotMDS(dge)
+
+#Podemos cambiar la variabilidad de dispersión a través del cambio de dimensiones 
+#plotMDS(dge, dim.plot = c(1,4))
+
+```
+
+
+**¿Réplicas biológicas? = Normalizar los datos a través de factores de normalización**
+```{r}
+#Normalizar nuestros datos, para esto edgeR nos permite calcular un factor de normalización
+dgeNorm = calcNormFactors(dge)
+
+#Clasificacar clase
+class(dgeNorm)
+
+#Puedes visualizar los factores de normalización
+dgeNorm$samples
+
+```
+
+
+**Valor de dispersión**
+```{r}
+#estimaremos la dispersión entre nuestras librerías 
+dgeNorm = estimateCommonDisp(dgeNorm)
+
+#podemos visualizar este valor (si no tuvieran replicas es posible ingresar este valor manualmente, pero no es ideal)
+
+#VALOR DE DISPERSIÓN
+dgeNorm$common.dispersion
+
+```
+**Calculando la expresión diferencial entre tratamientos**
+```{r}
+#Calculando la expresión diferencial entre nuestras librerias (prueba pareada, exact-test)
+
+#Pueden especificar que grupo de datos desean comparar
+diff_exp = exactTest(dgeNorm, dispersion = dgeNorm$common.dispersion, pair = c("wt_sc", "wt_sl" ))
+diff_exp2 = exactTest(dgeNorm, dispersion = dgeNorm$common.dispersion, pair = c("st_sc", "st_sl" ))
+
+#ahora visualizaremos el objeto resultante de la prueba exacta de Fisher (objeto DGEExact)
+diff_exp
+diff_exp2
+
+```
+PARA **diff_exp**
+NOTAS: el -0.2667578 (log2) es decir 2^-0.266, es lo que tenemos de expresión diferencial entre wt_sc/wt_sl, ese gen no es tan cambiante. 
+
+NOTAS: el 6.699863 (log2) es decir 2^6.699, es el número de cuentas asociadas por millón (lectura).Hay muchas.
+
+NOTAS: El Pvalue no nos sirve tanto, porque ese Pvalue es sobre el cambio consistente de ese gen, y no de todos. 
+
+**Estos datos significa que si hubo un cambio significativo de la expresión de genes entre tratamientos**
+logFC > |1|
+Pvalue < 0.05
+
+
+**Visualización del gen YPR161C**
+NOTA: Llamar a un gen (gen YPR161C) dentro de los tratamientos wt_sc y wt_sl
+```{r}
+#Debemos de declarar con un vector de carácteres
+#Llamar al gen YPR161C
+graf = counts["YPR161C", c("wt_sc_1", "wt_sl_2", "wt_sc_3","wt_sl_1","wt_sl_2","wt_sl_3" )]
+
+#graf es un data.frame
+#convertir graf a un vector númerico
+graf2 = as.numeric(graf)
+
+#Nombre de las columnas de la gráfica
+colnames(graf)
+
+#declarar nombre a la grafica 2
+names(graf2)=colnames(graf)
+
+#Hacer una gráfica de barras para comparar al expresión del gen entre los tratamientos
+barplot(graf2, col = "orange")
+
+```
+**Dimensiones del objeto resultante (diff_exp)**
+```{r}
+#si desean saber más sobre esta función
+#?exactTest
+
+#podemos preguntar las dimenciones del objeto resultante
+dim(diff_exp)
+```
+
+
+**Correción del P-value con False Discovery Rate**
+NOTA: Se uso la función topTags()
+```{r}
+#Calculando la expresión diferencial entre nuestras librerias (prueba pareada, exact-test)
+
+#Pueden especificar que grupo de datos desean comparar
+#diff_exp = exactTest(dgeNorm, dispersion = dgeNorm$common.dispersion, pair = c("wt_sc", "wt_sl" ))
+#diff_exp2 = exactTest(dgeNorm, dispersion = dgeNorm$common.dispersion, pair = c("st_sc", "st_sl" ))
+
+#ahora visualizaremos el objeto resultante de la prueba exacta de Fisher (objeto DGEExact)
+#diff_exp2
+
+#¡TENEMOS EL ERROR DE P-VALUE!
+#P value menos a 0.049 no es significativo
+#False Discovery Rate, es para realizar una correción del Pvalue. 
+#Se deseable saber que genes tienen un mayor cambio y con que valor
+
+topTags(diff_exp)
+
+dim(topTags(diff_exp))
+
+#Guardar la tabla con todos los valores en un objeto de R y poder usarlo posteriormente es importante para nuestros fines.
+
+deTab = topTags(diff_exp, n=Inf)$table
+
+#LLAMAR AL GEN YPR161C DEL diff_exp con FDR
+#Si dejas vacío luego de los parentesis es para que se pongan todas las columnas, si le pones un número se seleccionara una columna        deTab[c(''),]
+deTab[c('YPR161C'),]
+```
+NOTA: 
+Para aceptar el rango de error de: 
+P-Value = 0.05
+FDR = 0.05 (es conservador, es el margen de error)
+El 0.0648357 no es significativo consideranto este rango de FDR
+
+
+**Obtener Genes con un logFC mayor a 5**
+```{r}
+#Aquí esta filtrados los genes con un cambio significativo, pero también podemos filtrado por cualquier criterio matematico
+
+#deTab es un data.frame, toma los logFc mayores a 5
+#deTab[deTab$logFC > 5]
+
+row.names(deTab)[deTab$logFC > 5]  #recuerden que el FC esta dado en log2.
+
+```
+
+**Diseñar el diagrama de Venn e instalar el paquete**
+```{r}
+x = row.names(deTab)[deTab$logFC > 5]
+y = row.names(deTab)[deTab$log > -5]
+z = row.names(deTab)[deTab$log > -2]
+
+install.packages("VennDiagram")
+library(grid)
+library(VennDiagram)
+
+```
+
+**Crear el diagrama de Venn**
+```{r}
+venn.plot <- venn.diagram(
+  x = list(
+    Set1 = x,
+    Set2 = y,
+    Set3 = z
+  ),
+  category.names = c("Group 1", "Group 2", "Group 3"),
+  filename = NULL, #Esto es para que el diagrama se devuelva como objeto en lugar de guardarse en un archivo
+  output =TRUE
+)
+
+#Mostrar el diagrama
+grid.draw(venn.plot)
+```
+
+
+
