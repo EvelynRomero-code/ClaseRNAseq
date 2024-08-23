@@ -1,0 +1,488 @@
+---
+title: "Expresion_Dif_Poinsettia"
+output: html_document
+date: "2024-08-19"
+---
+
+**Instalar los paquetes**
+```{r}
+#instalando paqueterias de bioconductor
+#if (!require("BiocManager", quietly = TRUE))
+    #install.packages("BiocManager")
+
+#BiocManager::install("edgeR")
+
+#BiocManager::install("limma")
+
+#Necesitamos cargar edgaer y limma, para eso usamos la función library
+
+library(limma)
+library(edgeR)
+
+```
+
+**Acceder a la tabla de expresión**
+
+```{r}
+setwd("/cloud/project/Poinsettia_ExpDif/")
+#Al momento de nombrar la carpeta donde se ha guardado la tabla no poner espacios, /, #, %, etc.
+
+#Podemos saber que archivos están en esta dirección usando el siguiente comando: 
+
+list.files()
+
+```
+
+##Proyecto de Noche Buena en donde vamos a trabajar expresión diferencial
+
+Esta tabla viene de los datos de fastq de ERR221 ()
+
+**Leer la tabla**
+
+```{r}
+#Aquí llamaremos a nuestra tabla Saccharomyces.txt junto con sus encabezados
+counts = read.table("Metadata_tpm.txt", header=TRUE, row.names = 1, sep="\t", comment.char="")
+
+#Los primeros 6 encabezados se muestran
+head(counts)
+
+dim(counts)
+```
+
+**Archivo de salida**
+##Crear carpeta
+
+```{r}
+#Para crear un archivo donde se almacenarán los resultados del análisis: 
+
+outpath = "/cloud/project/Poinsettia_ExpDif/RESULTS"
+
+dir.create(outpath, showWarnings = FALSE)
+
+#aquí llamaremos a nuestra tabla de datos y la guardaremos en una variable dentro de R
+#counts = read.table("tpm_Metadata.txt", header=TRUE, row.names = 1, sep="\t", comment.char="") 
+
+#Podemos saber cómo luce nuestra tabla cargada y que dimenciones tiene este objeto. 
+#head(counts)
+
+```
+
+**Visualizando tabla total(dim)**
+
+```{r}
+dim(counts)
+```
+
+**Filtrando los genes con baja expresión usando las siguientes instrucciones**
+
+Filtrar los datos por la cantidad mínima de lecturas asociadas a cada gen, a fin de no tener muchos genes con baja expresión y que estos nos causen ruido en el análisis.
+
+```{r}
+#Genes que tienen menos de 2 readss y en la suma de todas las filas da menos de 10 lecturas se eliminarán. 
+
+counts = counts[rowSums(cpm(counts)>=5 ) >= 30,]
+
+#rowSum es para la suma total
+# cpm(counts) es para los reads, el comando cpm y nos ayuda a tener los datos de expresión en cuentas por millón. 
+
+#Después de filtrar, la tabla a cambiado y visualizamos el encabezado. 
+
+head(counts)
+dim(counts)
+colnames(counts)
+```
+
+**Comparación entre replicas, mismos tratamientos y días**
+
+```{r}
+#Primera comparación 
+#además teniendo los datos precargados, podemos visualizarlos en alguna gráfica como lo hemos visto antes
+plot(log2(counts[,c("ERR_AZ_FB_0_R1", "ERR_AZ_FB_0_R2")]), col="blue") 
+
+#aquí estamos comparando únicamente dos librerias, ustedes pueden probar más. 
+lm(counts[,"ERR_AZ_FB_0_R1"] ~ counts[,"ERR_AZ_FB_0_R2"] ) #Regresión lineal
+
+# Segunda comparación
+plot(log2(counts[,c("ERR_PX_FB_6_R1", "ERR_PX_FB_6_R3")]), col="blue") #COMPARACION ENTRE DOS LIBRERIAS
+lm(counts[,"ERR_PX_FB_6_R1"] ~ counts[,"ERR_PX_FB_6_R3"] ) #REGRESION LINEAL
+
+```
+
+
+**Comparación de replicas con otro filtrado**
+
+```{r}
+#counts = counts[rowSums(cpm(counts) >= 4) >=20,]
+#plot(log2(counts[,c("ERR_PX_FB_6_R2", "ERR_PX_FB_6_R3")]), col="pink")
+
+#lm(counts[,"ERR_AZ_FB_0_R1"] ~ counts[,"ERR_AZ_FB_0_R2"] )
+
+#Segui con misma condicion, mismo día pero diferente replica
+#plot(log2(counts[, c("ERR_PX_FB_6_R2", "ERR_PX_FB_6_R3")]), col="blue")
+
+#Por último, evalué mismo día misma replica pero diferente condicion
+#plot(log2(counts[, c("ERR_AZ_FB_0_R1", "ERR_PX_FB_0_R1")]), col="grey")
+```
+
+**Comparación entre diferentes tratamientos (misma zona, diferente día)**
+
+```{r}
+plot(log2(counts[,c("ERR_AZ_FB_0_R1", "ERR_AZ_FB_6_R1")]), col="blue") #COMPARACION ENTRE DOS LIBRERIAS
+
+#La regresión lineal nos indica que tanto se parecen los datos
+lm(counts[,"ERR_PX_FB_6_R1"] ~ counts[,"ERR_PX_FB_6_R3"] ) #REGRESION LINEAL
+
+```
+**Comparación entre diferentes tratamientos (diferente zona, diferente día)**
+
+```{r}
+plot(log2(counts[,c("ERR_AZ_FB_0_R1", "ERR_PX_FB_6_R1")]), col="blue") #COMPARACION ENTRE DOS LIBRERIAS
+
+#La regresión lineal nos indica que tanto se parecen los datos
+lm(counts[,"ERR_AZ_FB_0_R1"] ~ counts[,"ERR_PX_FB_6_R1"] ) #REGRESION LINEAL
+
+```
+
+
+
+**Gráfica de regresión lineal**
+
+```{r}
+#Posterior a eso, me di a la tarea de realizar un filtrado de mi tabla, esto con el objetivo de reducir el ruido en mis gráficos, centrandome especificamente en el 2do experimento con una misma condicion, mismo dia pero diferente replica
+
+min_expression <- 4
+tab1_filtered = counts[rowSums(cpm(counts) >= min_expression) >= 20, ]
+dim(tab1_filtered)
+
+plot(log2(tab1_filtered[, c("ERR_AZ_FB_6_R2", "ERR_AZ_FB_6_R3")]), col="purple",
+     main="Gráfico de Expresión Log2 (Filtrado por expresión mínima)",
+     xlab="ERR_AZ_FB_6_R2",
+     ylab="ERR_AZ_FB_6_R3")
+```
+
+**Gráfica de regresión lineal**
+
+```{r}
+c_coln1 = colnames(counts)
+c_coln2 = colnames(counts)
+
+for (v in c_coln1){
+  print(v)
+  pdf(paste(outpath, v, ".pdf", sep=""))
+  plot(log2(counts[,c(v,"ERR_AZ_FB_6_R2")]), col="blue")
+  dev.off()
+  #  print(lm(counts[,v] ~ counts [,"ERR_AZ_6_R2"] )) #Regresión lineal
+
+}
+
+```
+
+**Agrupamiento de grupos**
+
+```{r}
+#Esto es para declarar los grupos que usaremos en el objeto DEList - Al igual que agrupar 
+grp = sub("...$", "", colnames(counts))
+
+grp
+
+#Haciendo el objeto DEList
+dge = DGEList(counts = counts, group = grp)
+dge
+
+#Haciendo visualización de la dispersión de nuestras librerias usando el plot MDS
+#pdf(paste(outpath, "MDS.pdf", sep=""))
+plotMDS(dge)
+#dev.off()
+```
+
+**Normalización**
+
+```{r}
+#Normalizar nuestros datos, para esto edgeR nos permite calcular un factor de normalización
+dgeNorm = calcNormFactors(dge)
+
+#Clasificacar clase
+class(dgeNorm)
+
+#Puedes visualizar los factores de normalización
+dgeNorm$samples
+
+```
+
+**Valor de dispersión**
+
+```{r}
+#estimaremos la dispersión entre nuestras librerías 
+dgeNorm = estimateCommonDisp(dgeNorm)
+
+#podemos visualizar este valor (si no tuvieran replicas es posible ingresar este valor manualmente, pero no es ideal)
+
+#VALOR DE DISPERSIÓN
+dgeNorm$common.dispersion
+```
+
+**Comparación entre diferentes tiempos**
+Aquí se realiza una comparación usando el valor de dispersión para obtener FC y P-value.
+
+```{r}
+#Calculando la expresión diferencial entre nuestras librerias (prueba pareada, exact-test)
+
+#Pueden especificar que grupo de datos desean comparar (Misma zona, diferente tiempo)
+# E.j.:ERR_AZ_FB_0 vs. ERR_AZ_FB_6
+# ("A", "B") = B - A, aquí aclaramos que A es el control
+diff_exp = exactTest(dgeNorm, dispersion = dgeNorm$common.dispersion, pair = c("ERR_AZ_FB_0","ERR_AZ_FB_2"))
+diff_exp2 = exactTest(dgeNorm, dispersion = dgeNorm$common.dispersion, pair = c("ERR_AZ_FB_0", "ERR_AZ_FB_4"))
+diff_exp3 = exactTest(dgeNorm, dispersion = dgeNorm$common.dispersion, pair = c("ERR_AZ_FB_0", "ERR_AZ_FB_6"))
+
+
+#ahora visualizaremos el objeto resultante de la prueba exacta de Fisher (objeto DGEExact)
+diff_exp
+diff_exp2
+diff_exp3
+
+```
+
+**Visualización en gráfica de barras**
+
+Hacer una gráfica de barras para comparar la expresión del gen entre los diferentes días (4-0) (misma zona)
+```{r}
+graf = counts["NODE_5_length_11737_cov_36.098854_g2_i0", c("ERR_AZ_FB_0_R1", "ERR_AZ_FB_0_R2", "ERR_AZ_FB_0_R3","ERR_AZ_FB_4_R1","ERR_AZ_FB_4_R2","ERR_AZ_FB_4_R3" )]
+graf
+
+#graf es un data.frame
+#convertir graf a un vector númerico
+graf2 <- as.numeric(graf)
+
+#Nombre de las columnas de la gráfica
+colnames(graf)
+
+#declarar nombre a la grafica 2
+names(graf2)=colnames(graf)
+
+#Hacer una gráfica de barras para comparar al expresión del gen entre los tratamientos
+barplot(graf2, col = "orange")
+
+```
+
+Hacer una gráfica de barras para comparar la expresión del gen entre los diferentes días (6-0) (misma zona)
+```{r}
+graf3 = counts["NODE_5_length_11737_cov_36.098854_g2_i0", c("ERR_AZ_FB_0_R1", "ERR_AZ_FB_0_R2", "ERR_AZ_FB_0_R3","ERR_AZ_FB_6_R1","ERR_AZ_FB_6_R2","ERR_AZ_FB_6_R3" )]
+graf3
+
+#graf es un data.frame
+#convertir graf a un vector númerico
+graf4 <- as.numeric(graf3)
+
+#Nombre de las columnas de la gráfica
+colnames(graf3)
+
+#declarar nombre a la grafica 2
+names(graf4)=colnames(graf3)
+
+#Hacer una gráfica de barras para comparar al expresión del gen entre los tratamientos
+barplot(graf4, col = "blue")
+
+```
+
+**Comparación entre diferentes zonas**
+```{r}
+#Calculando la expresión diferencial entre nuestras librerias (prueba pareada, exact-test)
+
+#Pueden especificar que grupo de datos desean comparar (diferente zona, mismo tiempo)
+# E.j.:ERR_AZ_FB_0 vs. ERR_AZ_FB_6
+#PX = Proximal
+#AZ = Abscission
+#DT = Distal
+
+diff_exp4 = exactTest(dgeNorm, dispersion = dgeNorm$common.dispersion, pair = c("ERR_AZ_FB_0","ERR_PX_FB_0"))
+diff_exp5 = exactTest(dgeNorm, dispersion = dgeNorm$common.dispersion, pair = c("ERR_AZ_FB_0", "ERR_DT_FB_0" ))
+
+
+#ahora visualizaremos el objeto resultante de la prueba exacta de Fisher (objeto DGEExact)
+diff_exp4
+diff_exp5
+
+```
+
+**Correción del P-value con False Discovery Rate**
+
+Se uso la función topTags()
+```{r}
+#diff_exp
+topTags(diff_exp)
+dim(topTags(diff_exp))
+deTab1 = topTags(diff_exp, n=Inf)$table #Guardar la tabla con todos los valores en un objeto de R y poder usarlo posteriormente es importante para nuestros fines.
+write.table(deTab1, file = "/cloud/project/Exp_Dif/ERR_AZ_0vsERR_AZ_2.txt", sep="\t")
+
+#diff_exp2
+topTags(diff_exp2)
+dim(topTags(diff_exp2))
+deTab2 = topTags(diff_exp2, n=Inf)$table
+write.table(deTab1, file = "/cloud/project/Exp_Dif/ERR_AZ_0vsERR_AZ_4.txt", sep="\t")
+
+#diff_exp3
+topTags(diff_exp3)
+dim(topTags(diff_exp3))
+deTab3 = topTags(diff_exp3, n=Inf)$table
+write.table(deTab1, file = "/cloud/project/Exp_Dif/ERR_AZ_0vsERR_AZ_6.txt", sep="\t")
+
+```
+**Visualización en gráfica de barras para P-value**
+```{r}
+#diff_exp4
+topTags(diff_exp4)
+dim(topTags(diff_exp4))
+deTab4 = topTags(diff_exp4, n=Inf)$table 
+
+#diff_exp5
+topTags(diff_exp5)
+dim(topTags(diff_exp5))
+deTab5 = topTags(diff_exp5, n=Inf)$table
+```
+
+**Función de for para filtrar con un logFC mayor a 1**
+```{r}
+#Aquí esta filtrados los genes con un cambio significativo, pero también podemos filtrar por cualquier criterio matematico. 
+
+#Hacer una lista
+comparacion = c("deTab1","deTab2","deTab3")
+
+#Hacer un ciclo para obtener la filtración
+for (i in comparacion) {
+  df <- get(i)
+  print(i)
+  
+  deGenes = rownames(df)[df$FDR < 0.05 & abs(df$logFC) > 3]
+  down = row.names(df)[df$logFC < -1]
+  over = row.names(df) [df$logFC > 1]
+  
+  #para saber el número total de genes que pasan estos filtros (genes diferenciales según nuestro criterio matemático)
+  
+  print(paste("total de diferenciales: ", length(deGenes)))
+  print(paste("número de genes inducidos: ", length(over)))
+  print(paste("número de genes reprimidos: ", length(down)))
+  print(" ")
+  
+  plotSmear(dge, de.tags = deGenes, ylab = i, cex = 0.5)
+}
+
+
+```
+
+**Venn-Diagram**
+Comparación entre tejidos
+```{r}
+#df_1 <- c("deTab1","deTab2", "deTab3")
+#x <- row.names(df)[!is.na(df) & df > 5]
+#y <- row.names(df)[!is.na(df$log) & df$log > -5]
+#z <- row.names(df)[!is.na(df$log) & df$log > -2]
+
+# Omitir filas que tengan NA
+#x <- x[!is.na(x)]
+#y <- y[!is.na(y)]
+#z <- z[!is.na(z)]
+
+#install.packages("VennDiagram")
+#library(grid)
+#library(VennDiagram)
+```
+**Crear el diagrama de Venn**
+Comparación entre tejidos
+```{r}
+#if (length(x) > 0 & length(y) > 0 & length(z) > 0) {
+  #venn.plot <- venn.diagram(
+    #x = list(
+      #Set1 = x,
+      #Set2 = y,
+      #Set3 = z
+    #),
+    #category.names = c("Group 1", "Group 2", "Group 3"),
+    #filename = NULL, 
+    #output = TRUE
+  #)
+
+  # Mostrar el diagrama
+  #grid.draw(venn.plot)
+#} else {
+  #print("Error: Uno o más conjuntos están vacíos o contienen NA.")
+#}
+```
+
+**Crear el diagrama de Venn**
+Comparación entre tejidos
+```{r}
+#venn.plot <- venn.diagram(
+  #x = list(
+    #Set1 = x,
+    #Set2 = y,
+    #Set3 = z
+  #),
+  #category.names = c("Group 1", "Group 2", "Group 3"),
+  #filename = NULL, #Esto es para que el diagrama se devuelva como objeto en lugar de guardarse en un archivo
+  #output =TRUE
+#)
+
+#Mostrar el diagrama
+#grid.draw(venn.plot)
+```
+
+**Gráficos de expresión diferencial**
+```{r}
+#Instalando las paqueterias
+#install.packages("gplots")
+#install.packages("RColorBrewer")
+
+library("gplots")
+library("RColorBrewer")
+```
+
+**Normalizamos nuestros datos de expresión por cpm**
+```{r}
+#normalizamos nuestros datos de expresión por cuentas por millón
+normalizados = cpm(counts)
+
+#extraemos la expresión de los genes diferenciales
+normalizados_diferenciales = normalizados[deGenes,]
+
+#veamos cómo se ve esta tablita
+head(normalizados_diferenciales)
+```
+
+**HeatMap**
+```{r}
+#hagamos un HEATMAP!
+heatmap(normalizados_diferenciales)
+
+#install.packages("pheatmap")
+library(pheatmap)
+
+#pheatmap(normalizados_diferenciales, fontsize_col = 4, fontsize_row = 1)
+
+m <- matrix(rnorm(200), 10, 10)
+colnames(m) <- paste("Col.", 1:10)
+rownames(m) <- paste("Fila", 1:10)
+
+# Mapa calor
+pheatmap(m,
+         display_numbers = TRUE,
+         number_color = "black", 
+         fontsize_number = 8)
+
+```
+
+**Comparación de no-normalizados**
+```{r}
+par(mfrow=c(1,2)) 
+
+boxplot(log(counts),col=rainbow(6), main="antes de la normalización")
+```
+
+**Comparación con después de la normalización**
+```{r}
+boxplot(log(normalizados), col=rainbow(6), main="después de la normalización")
+```
+**Barplot de la cantidad de reads en cada librería**
+```{r}
+barplot(apply(normalizados_diferenciales,2,sum),las=2, cex.names = 1, col = (1:6))
+```
+
