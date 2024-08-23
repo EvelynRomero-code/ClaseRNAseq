@@ -61,7 +61,7 @@ server <- function(input, output) {
       geom_bar(stat = "identity", position = "dodge") +
       theme_minimal() +
       labs(x = "Gene", y = "Valor", fill = "Columna") +
-      scale_fill_brewer(palette = "Set1")
+      scale_fill_brewer(palette = "Spectral")
   })
 }
 
