@@ -1,6 +1,6 @@
 ---
 title: "Expresión diferencial (RNAseq)"
-author: "Evelyn"
+author: "Evelyn Romero"
 date: "2024-08-15"
 output: html_document
 ---
