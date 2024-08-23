@@ -71,7 +71,7 @@ https://zenodo.org/records/13367020
 
 ## Pheatmap.
 ### Código de R para la creación de la matriz y el pheatmap.
-
+https://github.com/EvelynRomero-code/ClaseRNAseq/blob/main/Exp_Dif_RNAseq.Rmd
 
 ### Visualización de Pheatmap.
 ![image](https://github.com/user-attachments/assets/d688c8ae-23fa-4a3e-9947-f302b029c50b)
