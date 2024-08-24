@@ -83,7 +83,7 @@ Aquí se filtraron los genes con un cambio significativo. Asimismo, se debe de m
 
 ## Heatmap 
 <p style="font-size: 14px; font-family: 'Times New Roman', serif;">
-Esta visualización se utilizo para comparar patrones de expresión génica entre múltiples muestras (en este caso de las 3 comparaciones anteriormente dichas). Siendo los colores que indica la magnitud de la expresión.
+Esta visualización se utilizo para comparar patrones de expresión génica entre múltiples muestras (en este caso de las 3 comparaciones anteriormente dichas). Siendo los colores indicadores de la magnitud de la expresión.
 </p>
 
 #### Se tomaron en cuenta de los datos normalizados de las 3 comparaciones 
@@ -91,7 +91,7 @@ Esta visualización se utilizo para comparar patrones de expresión génica entr
 
 ## Pheatmap.
 <p style="font-size: 14px; font-family: 'Times New Roman', serif;">
-Otra herramienta de visualización (pheatmap) se utilizó para realizar un clustering jerárquico en las filas (genes) y las columnas (muestras), permitiendo agrupar genes y mmuesytas en patrones similares de expresión. Asimismo, se debe de mencionar que se utilizó una matriz para disminuir la cantidad de datos visualizados con la intención de facilitar la identificación de la magnitud de la expresión en la gráfica.
+Otra herramienta de visualización (pheatmap) se utilizó para realizar un clustering jerárquico en las filas (genes) y las columnas (muestras), permitiendo agrupar genes y mmuestras en patrones similares de expresión. Asimismo, se debe de mencionar que se utilizó una matriz para disminuir la cantidad de datos visualizados con la intención de facilitar la identificación de la magnitud de la expresión en la gráfica.
 </p>
 
 ### Código de R para la creación de la matriz y el pheatmap.
@@ -113,7 +113,7 @@ Los boxplots son útiles herramientras para visualizar la distribución de datos
 
 ## Volcano plot
 <p style="font-size: 14px; font-family: 'Times New Roman', serif;">
-
+Se utiliza para visualizar e identificar genes que son significativamente diferentes entre condiciones experimentales, ya sea genes sobreexpresados o reprimidos.
 </p>
 
 ### Código en R del volcano plot.
