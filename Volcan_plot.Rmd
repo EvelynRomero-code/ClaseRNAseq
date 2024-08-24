@@ -1,0 +1,302 @@
+---
+title: "Borrador"
+author: "Yo"
+date: "2024-08-21"
+output: html_document
+---
+**Código original con vector**
+```{r}
+colores_rand <- sample(colors(), 3)
+
+with(deTab1, plot(logFC, -log10(FDR), pch=20, cex=0.8, col=colores_rand[1], main="WT+N vs WT-N", xlim=c(-15, 15), ylim=c(0,80)))
+text(deTab1[1:20,]$logFC,-log(deTab1[1:20,]$FDR,10),labels=rownames(deTab1[1:20,]),cex=0.7,pos=1)
+with(subset(deTab1, FDR<.01 & abs(logFC)>2), points(logFC, -log10(FDR), pch=20, cex=0.5, col=colores_rand[2]))
+
+abline(v=2,lty=2, col=colores_rand[3])
+abline(v=-2,lty=2, col=colores_rand[3])
+
+legend("bottomright","Up_regulated",cex=1)
+legend("bottomleft","Down_regulated",cex=1)
+```
+
+## R Markdown
+
+**Ciclo con vector**
+```{r}
+comparacion = c("deTab1", "deTab2", "deTab3")
+
+# Hacer un ciclo para obtener la filtración y generar el volcano plot
+for (i in comparacion) {
+  df <- get(i)
+  print(i)
+  
+  deGenes = rownames(df)[df$FDR < 0.05 & abs(df$logFC) > 1]
+  down = row.names(df)[df$logFC < -1]
+  over = row.names(df)[df$logFC > 1]
+  
+  # Para saber el número total de genes que pasan estos filtros (genes diferenciales según nuestro criterio matemático)
+  print(paste("total de diferenciales: ", length(deGenes)))
+  print(paste("número de genes inducidos: ", length(over)))
+  print(paste("número de genes reprimidos: ", length(down)))
+  print(" ")
+  
+  plotSmear(dge, de.tags = deGenes, ylab = i, cex = 0.5)
+
+  # Generar colores aleatorios para el volcano plot
+  colores_rand <- sample(colors(), 3)
+  
+  # Crear el volcano plot
+  with(df, plot(logFC, -log10(FDR), pch=20, cex=0.8, col=colores_rand[1], 
+                main=paste("Volcano Plot for", i), xlim=c(-15, 15), ylim=c(0,80)))
+  
+  # Añadir etiquetas a los primeros 20 genes más diferenciales
+  text(df[1:20,]$logFC, -log(df[1:20,]$FDR, 10), labels=rownames(df[1:20,]), cex=0.6, pos=1)
+  
+  # Resaltar genes con FDR < 0.01 y |logFC| > 2
+  with(subset(df, FDR < 0.01 & abs(logFC) > 2), 
+       points(logFC, -log10(FDR), pch=20, cex=0.4, col=colores_rand[2]))
+  
+  # Añadir líneas de referencia para |logFC| > 2
+  abline(v=2, lty=2, col=colores_rand[3])
+  abline(v=-2, lty=2, col=colores_rand[3])
+  
+  # Añadir leyendas
+  legend("bottomright", "Up_regulated", cex=1)
+  legend("bottomleft", "Down_regulated", cex=1)
+}
+```
+
+**Ciclo de for con lista TOTAL**
+
+```{r}
+# Definir una lista con los data frames
+comparacion = list(diff_exp, diff_exp2, diff_exp3)
+
+# Hacer un ciclo para obtener la filtración y generar el volcano plot
+for (i in seq_along(comparacion)) {
+  df <- comparacion[[i]]  # Acceder al data frame correspondiente en la lista
+  print(i)
+  
+  # Aplicar topTags y guardar el resultado completo
+  topTag_result <- topTags(df, n = Inf)
+  
+  # Guardar la tabla completa
+  deTab <- topTag_result$table
+  
+  # Obtener las dimensiones del resultado
+  dimensiones <- dim(topTag_result)
+  
+  deGenes = rownames(df)[df$FDR < 0.05 & abs(df$logFC) > 1]
+  down = row.names(df)[df$logFC < -1]
+  over = row.names(df)[df$logFC > 1]
+  
+  # Para saber el número total de genes que pasan estos filtros (genes diferenciales según nuestro criterio matemático)
+  print(paste("Data frame", i))  
+  print(paste("total de diferenciales: ", length(deGenes)))
+  print(paste("número de genes inducidos: ", length(over)))
+  print(paste("número de genes reprimidos: ", length(down)))
+  print(" ")
+  
+  plotSmear(df, de.tags = deGenes, ylab = i, cex = 0.5)
+
+  # Generar colores aleatorios para el volcano plot
+  colores_rand <- sample(colors(), 3)
+  
+  # Crear el volcano plot
+  with(df, plot(logFC, -log10(FDR), pch=20, cex=0.8, col=colores_rand[1], 
+                main=paste("Volcano Plot for", i), xlim=c(-15, 15), ylim=c(0,80)))
+  
+  # Añadir etiquetas a los primeros 20 genes más diferenciales
+  text(df[1:20,]$logFC, -log(df[1:20,]$FDR, 10), labels=rownames(df[1:20,]), cex=0.7, pos=1)
+  
+  # Resaltar genes con FDR < 0.01 y |logFC| > 2
+  with(subset(df, FDR < 0.01 & abs(logFC) > 2), 
+       points(logFC, -log10(FDR), pch=20, cex=0.5, col=colores_rand[2]))
+  
+  # Añadir líneas de referencia para |logFC| > 2
+  abline(v=2, lty=2, col=colores_rand[3])
+  abline(v=-2, lty=2, col=colores_rand[3])
+  
+  # Añadir leyendas
+  legend("bottomright", "Up_regulated", cex=1)
+  legend("bottomleft", "Down_regulated", cex=1)
+}
+
+```
+
+**Ciclo de for con vector TOTAL**
+```{r}
+# Crear un vector con los nombres de los data frames
+vector_dfs = c("diff_exp", "diff_exp2", "diff_exp3")
+
+# Procesamiento automatizado
+for (i in seq_along(vector_dfs)) {
+  
+  # Obtener el nombre del data frame actual
+  df_name <- vector_dfs[i]
+  
+  # Extraer el data frame usando su nombre
+  df <- get(df_name)
+  
+  # Aplicar topTags y guardar el resultado completo
+  topTag_result <- topTags(df, n = Inf)
+  
+  # Guardar la tabla completa
+  deTab <- topTag_result$table
+  
+  # Obtener las dimensiones del resultado
+  dimensiones <- dim(topTag_result)
+  
+  # Filtrado de genes diferenciales
+  deGenes <- rownames(deTab)[deTab$FDR < 0.05 & abs(deTab$logFC) > 1]
+  down <- row.names(deTab)[deTab$logFC < -1]
+  over <- row.names(deTab)[deTab$logFC > 1]
+  
+  # Imprimir estadísticas de filtrado
+  print(paste("Data frame", df_name))  
+  print(paste("Total de genes diferenciales: ", length(deGenes)))
+  print(paste("Número de genes inducidos: ", length(over)))
+  print(paste("Número de genes reprimidos: ", length(down)))
+  print(" ")
+  
+  # Generar el gráfico con los genes diferenciales
+  plotSmear(df, de.tags = deGenes, ylab = df_name, cex = 0.5)
+  
+  # Generar colores aleatorios para el volcano plot
+  colores_rand <- sample(colors(), 3)
+  
+  # Crear el volcano plot
+  with(df, plot(logFC, -log10(FDR), pch=20, cex=0.8, col=colores_rand[1], 
+                main=paste("Volcano Plot for", i), xlim=c(-15, 15), ylim=c(0,80)))
+  
+  # Añadir etiquetas a los primeros 20 genes más diferenciales
+  text(df[1:20,]$logFC, -log(df[1:20,]$FDR, 10), labels=rownames(df[1:20,]), cex=0.7, pos=1)
+  
+  # Resaltar genes con FDR < 0.01 y |logFC| > 2
+  with(subset(df, FDR < 0.01 & abs(logFC) > 2), 
+       points(logFC, -log10(FDR), pch=20, cex=0.5, col=colores_rand[2]))
+  
+  # Añadir líneas de referencia para |logFC| > 2
+  abline(v=2, lty=2, col=colores_rand[3])
+  abline(v=-2, lty=2, col=colores_rand[3])
+  
+  # Añadir leyendas
+  legend("bottomright", "Up_regulated", cex=1)
+  legend("bottomleft", "Down_regulated", cex=1)
+}
+```
+
+**Ciclo con vector**
+```{r}
+comparacion = c("deTab1", "deTab2", "deTab3")
+
+# Hacer un ciclo para obtener la filtración y generar el volcano plot
+for (i in comparacion) {
+  df <- get(i)
+  print(i)
+  
+  deGenes = rownames(df)[df$FDR < 0.05 & abs(df$logFC) > 1]
+  down = row.names(df)[df$logFC < -1]
+  over = row.names(df)[df$logFC > 1]
+  
+  # Para saber el número total de genes que pasan estos filtros (genes diferenciales según nuestro criterio matemático)
+  print(paste("total de diferenciales: ", length(deGenes)))
+  print(paste("número de genes inducidos: ", length(over)))
+  print(paste("número de genes reprimidos: ", length(down)))
+  print(" ")
+  
+  plotSmear(dge, de.tags = deGenes, ylab = i, cex = 0.5)
+
+  # Generar colores aleatorios para el volcano plot
+  colores_rand <- sample(colors(), 3)
+  
+  # Crear el volcano plot
+  with(df, plot(logFC, -log10(FDR), pch=20, cex=0.8, col=colores_rand[1], 
+                main=paste("Volcano Plot for", i), xlim=c(-15, 15), ylim=c(0,80)))
+  
+  # Añadir etiquetas a los primeros 20 genes más diferenciales
+  text(df[1:20,]$logFC, -log(df[1:20,]$FDR, 10), labels=rownames(df[1:20,]), cex=0.7, pos=1)
+  
+  # Resaltar genes con FDR < 0.01 y |logFC| > 2
+  with(subset(df, FDR < 0.01 & abs(logFC) > 2), 
+       points(logFC, -log10(FDR), pch=20, cex=0.5, col=colores_rand[2]))
+  
+  # Añadir líneas de referencia para |logFC| > 2
+  abline(v=2, lty=2, col=colores_rand[3])
+  abline(v=-2, lty=2, col=colores_rand[3])
+  
+  # Añadir leyendas
+  legend("bottomright", "Up_regulated", cex=1)
+  legend("bottomleft", "Down_regulated", cex=1)
+}
+```
+
+```{r}
+# Definir los pares a comparar
+pares_comparacion <- list(
+  c("ERR_AZ_FB_0", "ERR_AZ_FB_2"),
+  c("ERR_AZ_FB_0", "ERR_AZ_FB_4"),
+  c("ERR_AZ_FB_0", "ERR_AZ_FB_6")
+)
+
+# Inicializar una lista para guardar los resultados de las comparaciones
+lista_diff_exp <- list()
+
+# Calcular la expresión diferencial para cada par y almacenar los resultados
+for (i in seq_along(pares_comparacion)) {
+  pair <- pares_comparacion[[i]]
+  diff_exp <- exactTest(dgeNorm, dispersion = dgeNorm$common.dispersion, pair = pair)
+  lista_diff_exp[[i]] <- diff_exp
+}
+
+# Procesamiento automatizado para cada resultado de expresión diferencial
+for (i in seq_along(lista_diff_exp)) {
+  
+  # Obtener el objeto DGEExact actual
+  df <- lista_diff_exp[[i]]
+  
+  # Aplicar topTags y guardar el resultado completo
+  topTag_result <- topTags(df, n = Inf)
+  
+  # Guardar la tabla completa
+  deTab <- topTag_result$table
+  
+  # Filtrado de genes diferenciales
+  deGenes <- rownames(deTab)[deTab$FDR < 0.05 & abs(deTab$logFC) > 1]
+  down <- row.names(deTab)[deTab$logFC < -1]
+  over <- row.names(deTab)[deTab$logFC > 1]
+  
+  # Imprimir estadísticas de filtrado
+  print(paste("Comparación", i))  
+  print(paste("Total de genes diferenciales: ", length(deGenes)))
+  print(paste("Número de genes inducidos: ", length(over)))
+  print(paste("Número de genes reprimidos: ", length(down)))
+  print(" ")
+  
+  # Generar el gráfico con los genes diferenciales
+  plotSmear(df, de.tags = deGenes, ylab = paste("Comparación", i), cex = 0.5)
+  
+  # Generar colores aleatorios para el volcano plot
+  colores_rand <- sample(colors(), 3)
+  
+  # Crear el volcano plot
+  with(deTab, plot(logFC, -log10(FDR), pch=20, cex=0.8, col=colores_rand[1], 
+                   main=paste("Volcano Plot for Comparación", i), xlim=c(-15, 15), ylim=c(0,80)))
+  
+  # Añadir etiquetas a los primeros 20 genes más diferenciales
+  text(deTab[1:20,]$logFC, -log(deTab[1:20,]$FDR, 10), labels=rownames(deTab[1:20,]), cex=0.7, pos=1)
+  
+  # Resaltar genes con FDR < 0.01 y |logFC| > 2
+  with(subset(deTab, FDR < 0.01 & abs(logFC) > 2), 
+       points(logFC, -log10(FDR), pch=20, cex=0.5, col=colores_rand[2]))
+  
+  # Añadir líneas de referencia para |logFC| > 2
+  abline(v=2, lty=2, col=colores_rand[3])
+  abline(v=-2, lty=2, col=colores_rand[3])
+  
+  # Añadir leyendas
+  legend("bottomright", "Up_regulated", cex=1)
+  legend("bottomleft", "Down_regulated", cex=1)
+}
+
+```
