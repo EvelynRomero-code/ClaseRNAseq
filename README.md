@@ -83,6 +83,16 @@ https://github.com/EvelynRomero-code/ClaseRNAseq/blob/main/Exp_Dif_RNAseq.Rmd
 ### Después de la normalización
 ![image](https://github.com/user-attachments/assets/f97eff39-2342-4f11-bac9-b950efcd84af)
 
+## Volcano plot
+### Comparación de la zona de abscisión del día 0 y 2. 
+![image](https://github.com/user-attachments/assets/cce30dfe-abbb-43b2-bb56-195d919891e2)
+
+### Comparación de la zona de abscisión del día 0 y 4. 
+![image](https://github.com/user-attachments/assets/8ad49e2a-2bed-47fe-8dd2-434f65e7ae32)
+
+### Comparación de la zona de abscisión del día 0 y 6. 
+![image](https://github.com/user-attachments/assets/015b6868-5cd7-4308-a9cd-a77715ac417c)
+
 ## Barplot
 ![image](https://github.com/user-attachments/assets/228c6adf-9323-4663-bb26-fffdbb852456)
 
