@@ -84,6 +84,9 @@ https://github.com/EvelynRomero-code/ClaseRNAseq/blob/main/Exp_Dif_RNAseq.Rmd
 ![image](https://github.com/user-attachments/assets/f97eff39-2342-4f11-bac9-b950efcd84af)
 
 ## Volcano plot
+### Código en R del volcano plot.
+https://github.com/EvelynRomero-code/ClaseRNAseq/blob/main/Volcan_plot.Rmd
+
 ### Comparación de la zona de abscisión del día 0 y 2. 
 ![image](https://github.com/user-attachments/assets/cce30dfe-abbb-43b2-bb56-195d919891e2)
 
